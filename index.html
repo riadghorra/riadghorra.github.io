@@ -1,13 +1,329 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <title>D3 Page Template</title>
+	<head>
+		<meta charset="utf-8">
+		<title>D3: Line chart with axes</title>
+		<script type="text/javascript" src="../d3/d3.js"></script>
+		<style type="text/css">
+  /* No style rules here yet */
+  </style>
+</head>
+<body>
 
-        <script type="text/javascript" src="d3/d3.js"></script>
-    </head>
-    <body>
-      <p> Je vote pour : C (5); E6 (3) et E5(2)
-        Merci Taco ! </p>
-    </body>
+  <h1>This is Quantifiably the Best Month to go to the Farmers Market</h1>
+
+  As part of a homework assignment, I ask my students at Pratt to go out and chart something of interest to them, and Katherine Savarese came back with a simple chart about farmers markets that I loved- it inspired this post.
+
+  You probably know that farmers markets are a staple across all five boroughs of New York City, but September happens to be a very special month. Why is that?  Well, it turns out September is the month with the most unique types of fresh produce- forty three to be exact.
+
+  To show the current offerings, we charted how many types of fruits and vegetables are available by month, and showed if they were fresh or from storage.
+</h1>
+
+<p id="f_h">Fruits harvested</p>
+<p id="f_s">Fruits from storage</p>
+<p id="v_h">Vegetables harvested</p>
+<p id="v_s">Vegetables from storage</p>
+
+<script type="text/javascript">
+d3.select("body").append("p").text("This is a reproduction of http://iquantny.tumblr.com/post/129373499164/this-is-quantifiably-the-best-month-to-go-to-the");
+
+//Width and height
+var w = 600;
+var h = 250;
+var tempData;
+var padding = 30;
+var months = [];
+
+d3.csv("fruits.csv", function(data) {
+  data.forEach(function(d) {
+    d.index = +d.index;
+    //d["month"] = +d["month"];
+    d.count = +d.count;
+  });
+  dataset = data;
+  // console.log(data[13]);
+  // console.log(dataset[14]);
+  // console.log(dataset[14].count);
+  tempData = dataset.filter(function(d){
+    return d.index == 0;
+  })
+
+
+  months = tempData.map(d => d.month);
+//
+// x = d3.scaleBand()
+//   .domain(MONTHS)
+//   .rangeRound([padding, width])
+//   .paddingInner(0.5)
+
+  var xScale = d3.scaleBand()
+  .domain(months)
+  .rangeRound([padding, w])
+  .paddingInner(0.4);
+
+  // var xScale = d3.scaleBand()
+  // .domain(d3.range(tempData.length))
+  // .rangeRound([padding, w])
+  // .paddingInner(0.05);
+
+  var yScale = d3.scaleLinear()
+  .domain([0, d3.max(tempData, function(d) {return d.count;})])
+  .range([h-padding, padding]);
+
+  //Define X axis
+  var xAxis = d3.axisBottom()
+  .scale(xScale);
+  //.tickFormat(date_format);
+
+  //Define Y axis
+  var yAxis = d3.axisLeft()
+  .scale(yScale)
+  .ticks(10);
+
+
+
+  //
+  //Create SVG element
+  var svg = d3.select("body")
+  .append("svg")
+  .attr("width", w)
+  .attr("height", h);
+  //
+  //Create bars
+  svg.selectAll("rect")
+  .data(tempData)
+  .enter()
+  .append("rect")
+  .attr("x", function(d, i) {
+    return xScale(d.month);
+  })
+  .attr("y", function(d) {
+    //return yScale(padding);
+    //return yScale(i);
+    return yScale(d.count);
+    //return padding;
+
+  })
+  .attr("width", xScale.bandwidth())
+  .attr("height", function(d) {
+    //return yScale(d.count);
+    //return h - yScale(d.count);
+    return h -yScale(d.count) - padding ;
+  })
+  .attr("fill", "red"); //function(d) {
+    //return "rgb(0, 0, 200)";
+  //});
+
+  //Create X axis
+  svg.append("g")
+  .attr("class", "x axis")
+  .attr("transform", "translate(0," + (h - padding) + ")")
+  .call(xAxis);
+
+  //Create Y axis
+  svg.append("g")
+  .attr("class", "y axis")
+  .attr("transform", "translate(" + padding + ",0)")
+  .call(yAxis);
+
+  // // text label for the x axis
+  // svg.append("text")
+  //     .attr("transform",
+  //           "translate(" + (h/2) + " ," +
+  //                          padding + ")")
+  //     .style("text-anchor", "middle")
+  //     .text("Quantity of");
+  // text label for the y axis
+
+// svg.append("text")
+//     .attr("transform", "rotate(-90)")
+//     .attr("y", 200)
+//     .attr("x", 200)
+//     .attr("text-anchor", "middle")
+//     .text("Value jkhsdfkjdf fdkjgfkg")
+//     .attr("font-family", "sans-serif")
+//     .attr("font-size", "11px")
+//     .attr("fill", "white");
+
+
+  //On click, update with new data	-------------------------
+  d3.selectAll("p")
+  .on("click", function() {
+
+    //See which p was clicked
+    var paragraphID = d3.select(this).attr("id");
+
+    //Decide what to do next
+    if (paragraphID == "f_h") {
+      tempData = dataset.filter(function(d){
+        return d.index == 0;
+      })
+    }
+
+    if (paragraphID == "f_s") {
+      tempData = dataset.filter(function(d){
+        return d.index == 1;
+      })
+    }
+
+    if (paragraphID == "v_h") {
+      tempData = dataset.filter(function(d){
+        return d.index == 2;
+      })
+    }
+
+    if (paragraphID == "v_s") {
+      tempData = dataset.filter(function(d){
+        return d.index == 3;
+      })
+    }
+
+    //Update scale domains
+    yScale.domain([0, d3.max(tempData, function(d) {return d.count;})])
+    .range([h-padding, padding]);
+
+    //var yAxis = d3.axisLeft()
+    // yAxis.scale(yScale)
+    // .ticks(5);
+
+    //Update all rects
+    svg.selectAll("rect")
+    .data(tempData)
+    .transition()
+    .delay(function(d, i) {
+      return i / dataset.length * 1000;
+    })
+    .duration(500)
+    .attr("y", function(d) {
+      return yScale(d.count);
+    })
+    .attr("height", function(d) {
+      return h -yScale(d.count) - padding ;
+    })
+    .attr("fill", function(d)
+		{if (d.index==0) {return "red"};
+		if (d.index==1){return "blue"};
+		if (d.index==2) {return "green"};
+		if (d.index==3) {return "rgb(220,220,0)"};
+    });
+
+    // //created updated Y axis
+    // svg.append("g")
+    // .attr("class", "y axis")
+    // .attr("transform", "translate(" + padding + ",0)")
+    // .call(yAxis);
+
+    //Update Y axis
+    svg.select(".y.axis")
+        .transition()
+        .duration(1000)
+      .call(yAxis);
+
+  });
+
+});
+//Update all labels
+//
+//Exercise: Modify this code to add and remove the correct labels each time!
+//
+// svg.selectAll("text")
+//    .data(dataset, key)
+//    .transition()
+//    .duration(500)
+//    .text(function(d) {
+//    		return d.value;
+//    })
+//    .attr("x", function(d, i) {
+// 		return xScale(i) + xScale.bandwidth() / 2;
+//    })
+//    .attr("y", function(d) {
+// 		return h - yScale(d.value) + 14;
+//    });
+
+
+
+
+//
+// //Create labels
+// svg.selectAll("text")
+// .data(dataset)
+// .enter()
+// .append("text")
+// .text(function(d) {
+//   return d;
+// })
+// .attr("text-anchor", "middle")
+// .attr("x", function(d, i) {
+//   return xScale(i) + xScale.bandwidth() / 2;
+// })
+// .attr("y", function(d) {
+//   return h - yScale(d) + 14;
+// })
+// .attr("font-family", "sans-serif")
+// .attr("font-size", "11px")
+// .attr("fill", "white");
+//
+//
+//
+//
+// //On click, update with new data
+// d3.select("p")
+// .on("click", function() {
+//
+//   //New values for dataset
+//   var numValues = dataset.length;						 		//Count original length of dataset
+//   var maxValue = 100;											//Highest possible new value
+//   dataset = [];  						 				 		//Initialize empty array
+//   for (var i = 0; i < numValues; i++) {				 		//Loop numValues times
+//     var newNumber = Math.floor(Math.random() * maxValue);	//New random integer (0-100)
+//     dataset.push(newNumber);			 			 		//Add new number to array
+//   }
+//
+//   //Update scale domain
+//   //Recalibrate the scale domain, given the new max value in dataset
+//   yScale.domain([0, d3.max(dataset)]);
+//
+//   //Update all rects
+//   svg.selectAll("rect")
+//   .data(dataset)
+//   .transition()
+//   .delay(function(d, i) {
+//     return i / dataset.length * 1000;
+//   })
+//   .duration(500)
+//   .attr("y", function(d) {
+//     return h - yScale(d);
+//   })
+//   .attr("height", function(d) {
+//     return yScale(d);
+//   })
+//   .attr("fill", function(d) {
+//     return "rgb(0, 0, " + Math.round(d * 10) + ")";
+//   });
+//
+//   //Update all labels
+//   svg.selectAll("text")
+//   .data(dataset)
+//   .transition()
+//   .delay(function(d, i) {
+//     return i / dataset.length * 1000;
+//   })
+//   .duration(500)
+//   .text(function(d) {
+//     return d;
+//   })
+//   .attr("x", function(d, i) {
+//     return xScale(i) + xScale.bandwidth() / 2;
+//   })
+//   .attr("y", function(d) {
+//     return h - yScale(d) + 14;
+//   });
+//
+// });
+
+
+
+
+</script>
+</body>
 </html>
